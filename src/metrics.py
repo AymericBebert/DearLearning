@@ -2,19 +2,22 @@
 Metrics to evaluate our results
 """
 
+from typing import List
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
 
-def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, cmap=plt.cm.Blues):
+def plot_confusion_matrix(y_true, y_pred, classes: List[str], normalize: bool = False,
+                          title: str = None, cmap=plt.cm.Blues):
     """This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
 
     Adapted from scikit-learn.org examples
     """
     if not title:
-        title = ("Normalized c" if normalize else "C") + "onfusion matrix"
+        title = ("Normalized " if normalize else "") + "Confusion Matrix"
 
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
@@ -44,8 +47,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, 
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            ax.text(j, i, format(cm[i, j], fmt),
-                    ha="center", va="center",
+            ax.text(j, i, format(cm[i, j], fmt), ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
     fig.tight_layout()
     return ax

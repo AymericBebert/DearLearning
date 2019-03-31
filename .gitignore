@@ -27,6 +27,7 @@ venv/
 
 # Dataset
 Data/
+Cache/
 
 # Local setup
 config/local.py

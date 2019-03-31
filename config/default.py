@@ -13,9 +13,14 @@ LOG_DATE_FMT = "%H:%M:%S"
 # Path
 DATA_PATH = "Data"
 DATASET_PATH = "Data/nsynth-train"
+CACHE_PATH = "Cache"
 
 # Spectrogram params
 WINDOW_SECOND_FRACTION = 10  # 0.1s window
 STEP_FRACTION = 8  # window move 1/this_number right each step
 FFT_SIZE = 256  # Width of FFT window
 SAMPLE_DURATION = 2  # 2s sound (padding or crop)
+
+# Dataset filtering
+DATASET_EXCLUDE_FAMILIES = []
+DATASET_EXCLUDE_SOURCES = ["synthetic", "electronic"]
