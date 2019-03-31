@@ -27,3 +27,6 @@ venv/
 
 # Dataset
 Data/
+
+# Local setup
+config/local.py

@@ -4,6 +4,8 @@ Project idea: use Deep Learning to ear the difference between instruments
 
 ## Setup
 
+### Requirements
+
 Developed with Python 3.7 and should be compatible with Python 3.6+
 
 Developed on macOS and Ubuntu. Not sure about compatibility with other systems
@@ -14,9 +16,16 @@ Install the requirements with the usual:
 pip3 install -r requirements.txt
 ```
 
+### Edit configuration
+
+To adapt the configuration file to your environment, you need to create a `local.py` file
+in the `config` directory, next to the `default.py` config file.
+
+You can overwrite every item of the default config, maybe paths, log config,...
+
 ## Run
 
-You should be able to play with:
+You should be able to run the code with:
 
 ```sh
 ./src/main.py
