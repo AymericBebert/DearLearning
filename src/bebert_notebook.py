@@ -68,7 +68,7 @@ print(f"Frequency sampling: {_fs}, data shape: {_data.shape}, data sample: {_dat
 
 # %%
 def wave_file_to_time_data(fname):
-    """Get content of the wav file"""
+    """Get content of the wav file, normalize the highest peak to +/- 1.0"""
     fs, data = wavfile.read(fname)
 
     if len(data.shape) == 2:
