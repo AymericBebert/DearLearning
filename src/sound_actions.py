@@ -3,6 +3,7 @@ Functions on sound
 """
 
 import os
+from typing import Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ from scipy.signal import windows as ssw
 import config
 
 
-def file_to_fft(filename, plot=False):
+def file_to_fft(filename: str, plot: bool = False) -> Tuple[int, np.ndarray]:
     """Get frequency sampling and FFT of the wav file"""
     fs, data = wavfile.read(filename)
 
@@ -38,7 +39,7 @@ def file_to_fft(filename, plot=False):
     return fs, rv
 
 
-def wave_file_to_time_data(fname):
+def wave_file_to_time_data(fname: str):
     """Get content of the wav file, normalize the highest peak to +/- 1.0"""
     fs, data = wavfile.read(fname)
 
@@ -50,7 +51,7 @@ def wave_file_to_time_data(fname):
     return fs, td
 
 
-def make_spectrogram(fs, time_data, plot=False):
+def make_spectrogram(fs: int, time_data: np.ndarray, plot: bool = False, desc: str = '') -> np.ndarray:
     """From frequency sampling and content of a wav file, make the spectrogram"""
     window_size = fs // config.WINDOW_SECOND_FRACTION
     window_size += window_size % 2 == 0
@@ -73,8 +74,8 @@ def make_spectrogram(fs, time_data, plot=False):
         spectrogram[k, :] = ft
 
     if plot:
-        plt.title(f"fs: {fs}, time_data size: {len(time_data_2)}, spectrogram: {spectrogram.shape}")
-        # plt.plot(window)
+        title = desc + ' - ' if desc else ''
+        plt.title(f"{title}{fs} - {spectrogram.shape}")
 
         plt.imshow(spectrogram, interpolation='nearest')
         plt.show()
@@ -82,6 +83,6 @@ def make_spectrogram(fs, time_data, plot=False):
     return spectrogram
 
 
-def make_file_spectrogram(fname, plot=False):
+def make_file_spectrogram(fname: str, plot: bool = False) -> np.ndarray:
     """Make the spectrogram of the wav file"""
-    return make_spectrogram(*wave_file_to_time_data(fname), plot=plot)
+    return make_spectrogram(*wave_file_to_time_data(fname), plot=plot, desc=os.path.basename(fname))
