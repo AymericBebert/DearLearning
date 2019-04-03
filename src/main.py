@@ -17,7 +17,7 @@ from keras.utils import to_categorical, plot_model
 import config
 from src.utils import resolve_path, pretty_duration
 from src.sound_actions import make_file_spectrogram, file_to_fft
-from src.dataset_actions import load_dataset_json, extract_tracks_by_family, make_spectrograms_and_labels
+from src.dataset_actions import load_dataset_json, extract_tracks_by_family, make_labels_and_spectrograms
 from src.metrics import plot_confusion_matrix
 
 
@@ -59,27 +59,31 @@ if __name__ == "__main__":
     exclude_families = config.DATASET_EXCLUDE_FAMILIES
     exclude_sources = config.DATASET_EXCLUDE_SOURCES
     dataset_json = load_dataset_json(os.path.join(dataset_path, "examples.json"))
-    data_store = extract_tracks_by_family(dataset_json,
-                                          exclude_families=exclude_families,
-                                          exclude_source=exclude_sources)
+
+    def file_access(fn):
+        return resolve_path(config.DATASET_PATH, "audio", fn + ".wav")
+
+    data_store, classes_n2i = extract_tracks_by_family(dataset_json,
+                                                       exclude_families=exclude_families,
+                                                       exclude_source=exclude_sources)
 
     # Make all the spectrograms. This can take some time. Put data into cache for faster reload
     os.makedirs(cache_path, exist_ok=True)
-    dataset_hash = hashlib.sha1(f"dataset_path-{exclude_families}-{exclude_sources}".encode('utf-8')).hexdigest()
+    dataset_hash = hashlib.sha1(f"{dataset_path}-{exclude_families}-{exclude_sources}".encode('utf-8')).hexdigest()
     cache_file_path = os.path.join(cache_path, dataset_hash + ".pickle")
 
     try:
         with open(cache_file_path, "rb") as cf:
             logging.info("Loading data from cache...")
-            ids, labels, spectrograms, classes_i2n, classes_n2i = pickle.load(cf)
+            ids, labels, spectrograms = pickle.load(cf)
     except Exception as e:
         logging.info(f"Could not load cache, making data from source... ({e})")
-        ids, labels, spectrograms, classes_i2n, classes_n2i = make_spectrograms_and_labels(data_store)
+        ids, labels, spectrograms = make_labels_and_spectrograms(data_store, file_access)
         logging.info("Saving data to cache...")
         with open(cache_file_path, "wb") as cf:
-            pickle.dump((ids, labels, spectrograms, classes_i2n, classes_n2i), cf)
+            pickle.dump((ids, labels, spectrograms), cf)
 
-    num_classes = len(classes_i2n)
+    num_classes = len(classes_n2i)
     logging.info(f"{num_classes} classes: {classes_n2i}")
 
     # Shuffle dataset
@@ -160,7 +164,7 @@ if __name__ == "__main__":
     logging.info(f"Confusion matrix:\n{confusion_matrix(labels_valid_flat, labels_pred_flat)}")
 
     # Pretty confusion matrix
-    class_names = [v.split("_")[0] for k, v in sorted(classes_i2n.items())]
+    class_names = [k.split("_")[0] for k, v in sorted(classes_n2i.items(), key=lambda x: x[1])]
     np.set_printoptions(precision=2)
 
     plot_confusion_matrix(labels_valid_flat, labels_pred_flat, classes=class_names)

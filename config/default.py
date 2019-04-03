@@ -16,10 +16,11 @@ DATASET_PATH = "Data/nsynth-train"
 CACHE_PATH = "Cache"
 
 # Spectrogram params
-WINDOW_SECOND_FRACTION = 10  # 0.1s window
-STEP_FRACTION = 8  # window move 1/this_number right each step
-FFT_SIZE = 256  # Width of FFT window
-SAMPLE_DURATION = 2  # 2s sound (padding or crop)
+BLOCK_DURATION = 100  # block size in milliseconds
+STEP_FRACTION = 8     # window move 1/this_number right each step
+FFT_SIZE = 256        # width of FFT window
+FFT_RATIO = 8         # 1/<this> of the total FFT will be kept (2 for full real FFT)
+SAMPLE_DURATION = 2   # <this> second sound (padding or crop)
 
 # Dataset filtering
 DATASET_EXCLUDE_FAMILIES = []

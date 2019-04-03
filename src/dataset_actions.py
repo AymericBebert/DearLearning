@@ -4,12 +4,10 @@ Functions to manage dataset
 
 import json
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Tuple, Any, Callable
 
 import numpy as np
 
-import config
-from src.utils import resolve_path
 from src.sound_actions import make_file_spectrogram
 
 
@@ -19,11 +17,15 @@ def load_dataset_json(json_path: str):
         return json.load(jf)
 
 
-def extract_tracks_by_family(dataset_json: Dict[str, Any],
-                             exclude_families=None, exclude_source=None) -> Dict[str, List[str]]:
-    """From the dict coming from nsynth json, group instruments by family"""
+def extract_tracks_by_family(dataset_json: Dict[str, Any], exclude_families=None,
+                             exclude_source=None) -> Tuple[Dict[int, List[str]], Dict[str, int]]:
+    """From the dict coming from nsynth json, group instruments by family.
+    :returns: {class_index -> files} and {class_name -> class_index}
+    """
     exclude_families = [] if exclude_families is None else exclude_families
     exclude_source = [] if exclude_source is None else exclude_source
+
+    classes_n2i: Dict[str, int] = {}
 
     corr = {}
     for s in dataset_json.values():
@@ -36,22 +38,20 @@ def extract_tracks_by_family(dataset_json: Dict[str, Any],
         name = s["note_str"]
         source = s["instrument_source_str"]
 
-        # register track name under {family}_{source} key
+        # register track name under index of {family}_{source} key
         if source not in exclude_source:
             fs = f"{family}_{source}"
-            if fs not in corr:
-                corr[fs] = []
-            corr[fs].append(name)
-    return corr
+            if fs not in classes_n2i:
+                classes_n2i[fs] = len(classes_n2i)
+                corr[classes_n2i[fs]] = []
+            corr[classes_n2i[fs]].append(name)
+    return corr, classes_n2i
 
 
-def make_spectrograms_and_labels(corr: Dict[str, List[str]]):
+def make_labels_and_spectrograms(corr: Dict[int, List[str]], file_access: Callable[[str], str] = lambda x: x):
     """Make the spectrogram of each file in the data dict
-    :returns: Lists for ids, labels, spectrograms; lookups {class_index -> class_name}, {class_name -> class_index}
+    :returns: Lists for ids, labels, spectrograms
     """
-    classes_i2n: Dict[int, str] = {i: k for i, k in enumerate(corr.keys())}
-    classes_n2i: Dict[str, int] = {k: i for i, k in classes_i2n.items()}
-
     ids: List[str] = []
     labels: List[int] = []
     spectrograms: List[np.ndarray] = []
@@ -60,7 +60,7 @@ def make_spectrograms_and_labels(corr: Dict[str, List[str]]):
         logging.info(f"Making {k} data...")
         for fn in file_names:
             ids.append(fn)
-            labels.append(classes_n2i[k])
-            spectrograms.append(make_file_spectrogram(resolve_path(config.DATASET_PATH, "audio", fn + ".wav")))
+            labels.append(k)
+            spectrograms.append(make_file_spectrogram(file_access(fn)))
 
-    return ids, labels, spectrograms, classes_i2n, classes_n2i
+    return ids, labels, spectrograms

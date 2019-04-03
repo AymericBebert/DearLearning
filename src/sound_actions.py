@@ -51,26 +51,30 @@ def wave_file_to_time_data(fname: str):
     return fs, td
 
 
-def make_spectrogram(fs: int, time_data: np.ndarray, plot: bool = False, desc: str = '') -> np.ndarray:
+def make_spectrogram(fs: int, time_data: np.ndarray, plot: bool = False, desc: str = '',
+                     sample_duration: int = config.SAMPLE_DURATION,
+                     block_duration: int = config.BLOCK_DURATION,
+                     step_fraction: int = config.STEP_FRACTION,
+                     fft_size: int = config.FFT_SIZE,
+                     fft_ratio: int = config.FFT_RATIO,
+                     ) -> np.ndarray:
     """From frequency sampling and content of a wav file, make the spectrogram"""
-    window_size = fs // config.WINDOW_SECOND_FRACTION
-    window_size += window_size % 2 == 0
+    window_size = int(fs * block_duration / 1000)
     window = ssw.blackman(window_size)
 
-    sample_size = fs * config.SAMPLE_DURATION
-    step = window_size // config.STEP_FRACTION
+    sample_size = fs * sample_duration
+    step = window_size // step_fraction
     n_steps = sample_size // step
 
     padding_left = np.zeros(step)
     padding_right = np.zeros(max(0, sample_size - len(time_data) - step))
     time_data_2 = np.concatenate((padding_left, time_data, padding_right))[:sample_size]
 
-    fft_size = config.FFT_SIZE
     spectrogram = np.zeros((n_steps, fft_size), dtype=float)
-    for k in range(n_steps - config.STEP_FRACTION):
+    for k in range(n_steps - step_fraction):
         sound_part = time_data_2[k * step:k * step + window_size]
         sound_windowed = window * sound_part
-        ft = abs(fft(sound_windowed, fft_size * 2)[:fft_size])
+        ft = abs(fft(sound_windowed, fft_size * fft_ratio)[:fft_size])
         spectrogram[k, :] = ft
 
     if plot:
