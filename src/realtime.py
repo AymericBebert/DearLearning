@@ -4,8 +4,9 @@
 Show a text-mode spectrogram using live microphone data.
 """
 
+import time
 import logging
-from typing import Dict, List, Callable, TypeVar, Generic
+from typing import Dict, List, Tuple, Callable, TypeVar, Generic
 
 import numpy as np
 from scipy.signal import windows as ssw
@@ -17,23 +18,29 @@ from keras.layers import Dense, Dropout
 from keras.utils import to_categorical, plot_model
 
 import config
-from src.utils import resolve_path
+from src.utils import resolve_path, pretty_duration
 from src.sound_actions import wave_file_to_time_data
 
 
+N_EPOCH = 30
+
 # local_data_store = {0: [resolve_path("Data", "french.wav")], 1: [resolve_path("Data", "english.wav")]}
 # local_classes_i2n = {0: "french", 1: "english"}
+# SAMPLE_DURATION = 180
 
 local_data_store = {
     0: [resolve_path("Data", "grave.wav")],
     1: [resolve_path("Data", "normal.wav")],
     2: [resolve_path("Data", "haute.wav")],
+    3: [resolve_path("Data", "amelie.wav")],
 }
 local_classes_i2n = {
-    0: "grave",
-    1: "normal",
-    2: "haute",
+    0: "aymeric grave",
+    1: "aymeric normal",
+    2: "aymeric haute",
+    3: "amelie",
 }
+SAMPLE_DURATION = 40
 
 # local_data_store = {
 #     0: [resolve_path("Data", "alestorm.wav")],
@@ -47,6 +54,7 @@ local_classes_i2n = {
 #     2: "nightwish",
 #     # 3: "voix",
 # }
+# SAMPLE_DURATION = 180
 
 
 def give_many_fft(fs: int, time_data: np.ndarray, threshold: float = 0.01,
@@ -77,12 +85,14 @@ def give_many_fft(fs: int, time_data: np.ndarray, threshold: float = 0.01,
         yield abs(fft(sound_windowed, fft_size * fft_ratio)[:fft_size])
 
 
-def make_labels_and_fft(corr: Dict[int, List[str]], file_access: Callable[[str], str] = lambda x: x, **kwargs):
+def make_labels_and_fft(corr: Dict[int, List[str]], file_access: Callable[[str], str] = lambda x: x, **kwargs) \
+        -> Tuple[List[int], List[np.ndarray], List[str]]:
     """Make the fft of some samples from each file in the data dict
     :returns: Lists for ids, labels, spectrograms; lookups {class_index -> class_name}, {class_name -> class_index}
     """
     labels: List[int] = []
     data: List[np.ndarray] = []
+    source: List[str] = []
 
     for k, file_names in corr.items():
         logging.info(f"Making {k} data...")
@@ -91,14 +101,15 @@ def make_labels_and_fft(corr: Dict[int, List[str]], file_access: Callable[[str],
             for out in give_many_fft(*wave_file_to_time_data(file_full_name), **kwargs):
                 labels.append(k)
                 data.append(out)
+                source.append(fn)
         logging.info(f"- Total: {len(labels)} entries...")
 
-    return labels, data
+    return labels, data, source
 
 
 def make_model(evaluate=False, **kwargs):
     logging.info("Making labels and ffts...")
-    labels, ffts = make_labels_and_fft(local_data_store, **kwargs)
+    labels, ffts, _ = make_labels_and_fft(local_data_store, **kwargs)
 
     # Shuffle dataset
     logging.info("Shuffling...")
@@ -121,12 +132,12 @@ def make_model(evaluate=False, **kwargs):
     model.add(Dropout(0.2))
     model.add(Dense(128, activation="relu"))
     model.add(Dropout(0.2))
-    model.add(Dense(128, activation="relu"))
-    model.add(Dropout(0.1))
+    # model.add(Dense(128, activation="relu"))
+    # model.add(Dropout(0.1))
     model.add(Dense(num_classes, activation="softmax"))
 
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-    plot_model(model, to_file=resolve_path("Data", "model_3.png"), show_shapes=True, show_layer_names=True)
+    plot_model(model, to_file=resolve_path("Cache", "MLP_realtime.png"), show_shapes=True, show_layer_names=True)
 
     if evaluate:
         logging.info("Model evaluation...")
@@ -153,9 +164,10 @@ def make_model(evaluate=False, **kwargs):
 
     logging.info("Model real train...")
 
-    model.fit(ffts, labels, batch_size=64, epochs=30)
+    t0 = time.perf_counter()
+    model.fit(ffts, labels, batch_size=64, epochs=N_EPOCH)
 
-    logging.info(f"Done training model")
+    logging.info(f"Done training model in {pretty_duration(time.perf_counter() - t0)} ({N_EPOCH} epochs)")
     return model
 
 
@@ -186,7 +198,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=config.LOG_LEVEL, format=config.LOG_FORMAT, datefmt=config.LOG_DATE_FMT)
 
-    _model = make_model(evaluate=True)
+    _model = make_model(evaluate=True, sample_duration=SAMPLE_DURATION)
 
     try:
         if LIST_DEVICES:
@@ -198,7 +210,7 @@ if __name__ == "__main__":
         _window = ssw.blackman(_block_size)
         _fft_size = config.FFT_SIZE
 
-        mln = MedianLastN(7, -1)
+        mln = MedianLastN(5, -1)
 
         def _callback(in_data, _, __, ___):
             sound = in_data.T[0]

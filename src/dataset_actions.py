@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple, Any, Callable
 
 import numpy as np
 
-from src.sound_actions import make_file_spectrogram
+from src.sound_actions import make_file_spectrogram, give_many_fft, wave_file_to_time_data
 
 
 def load_dataset_json(json_path: str):
@@ -64,3 +64,24 @@ def make_labels_and_spectrograms(corr: Dict[int, List[str]], file_access: Callab
             spectrograms.append(make_file_spectrogram(file_access(fn)))
 
     return ids, labels, spectrograms
+
+
+def make_labels_and_fft(corr: Dict[int, List[str]], file_access: Callable[[str], str] = lambda x: x, **kwargs) -> Tuple[List[int], List[np.ndarray], List[str]]:
+    """Make the fft of some samples from each file in the data dict
+    :returns: Lists for ids, labels, spectrograms; lookups {class_index -> class_name}, {class_name -> class_index}
+    """
+    labels: List[int] = []
+    data: List[np.ndarray] = []
+    source: List[str] = []
+
+    for k, file_names in corr.items():
+        logging.info(f"Making {k} data...")
+        for fn in file_names:
+            file_full_name = file_access(fn)
+            for out in give_many_fft(*wave_file_to_time_data(file_full_name), **kwargs):
+                labels.append(k)
+                data.append(out)
+                source.append(fn)
+        logging.info(f"- Total: {len(labels)} entries...")
+
+    return labels, data, source

@@ -8,7 +8,7 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
+import sklearn.metrics as skm
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten, Reshape, GlobalAveragePooling1D
 from keras.layers import Conv2D, MaxPooling2D, Conv1D, GlobalMaxPooling1D
@@ -44,16 +44,16 @@ if __name__ == "__main__":
     # make_file_spectrogram(os.path.join(data_path, "broken_clarinet.wav"), plot=True)
     # make_file_spectrogram(os.path.join(data_path, "brah.wav"), plot=True)
 
-    test_sample = 'brass_acoustic_059-036-075'
-    make_file_spectrogram(os.path.join(dataset_path, "audio", test_sample + ".wav"), plot=True)
+    # test_sample = 'brass_acoustic_059-036-075'
+    # make_file_spectrogram(os.path.join(dataset_path, "audio", test_sample + ".wav"), plot=True)
 
-    # Performance
-    t0 = time.perf_counter()
-
-    a = make_file_spectrogram(os.path.join(dataset_path, "audio", test_sample + ".wav"))
-
-    t1 = time.perf_counter()
-    logging.info(f"Spectrogram made in {pretty_duration(t1 - t0)}")
+    # # Performance
+    # t0 = time.perf_counter()
+    #
+    # a = make_file_spectrogram(os.path.join(dataset_path, "audio", test_sample + ".wav"))
+    #
+    # t1 = time.perf_counter()
+    # logging.info(f"Spectrogram made in {pretty_duration(t1 - t0)}")
 
     # Extract data from dataset json
     exclude_families = config.DATASET_EXCLUDE_FAMILIES
@@ -134,19 +134,24 @@ if __name__ == "__main__":
 
     model.add(Conv1D(64, 5, input_shape=(160, 256), activation='relu'))
     model.add(GlobalMaxPooling1D())
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.2))
     model.add(Dense(128, activation="relu"))
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.4))
     model.add(Dense(num_classes, activation="softmax"))
 
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-    plot_model(model, to_file=os.path.join(cache_path, "model_2.png"), show_shapes=True, show_layer_names=True)
+    plot_model(model, to_file=os.path.join(cache_path, "CNN_02.png"), show_shapes=True, show_layer_names=True)
+
+    N_EPOCH = 30
+    t0 = time.perf_counter()
 
     model.fit(spectrograms_2d_train,
               labels_train,
               batch_size=64,
               epochs=50,
               validation_data=(spectrograms_2d_valid, labels_valid))
+
+    logging.info(f"Done training model in {pretty_duration(time.perf_counter() - t0)} ({N_EPOCH} epochs)")
 
     #
     # Evaluate results
@@ -160,8 +165,9 @@ if __name__ == "__main__":
     labels_valid_flat = np.argmax(labels_valid, axis=1)
     labels_pred_flat = np.argmax(labels_pred, axis=1)
 
-    # Confusion matrix
-    logging.info(f"Confusion matrix:\n{confusion_matrix(labels_valid_flat, labels_pred_flat)}")
+    # Scores
+    logging.info(f"Accuracy:{skm.accuracy_score(labels_valid_flat, labels_pred_flat):.5f}")
+    logging.info(f"Confusion matrix:\n{skm.confusion_matrix(labels_valid_flat, labels_pred_flat)}")
 
     # Pretty confusion matrix
     class_names = [k.split("_")[0] for k, v in sorted(classes_n2i.items(), key=lambda x: x[1])]
