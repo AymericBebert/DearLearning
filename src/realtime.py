@@ -24,37 +24,15 @@ from src.sound_actions import wave_file_to_time_data
 
 N_EPOCH = 30
 
-# local_data_store = {0: [resolve_path("Data", "french.wav")], 1: [resolve_path("Data", "english.wav")]}
-# local_classes_i2n = {0: "french", 1: "english"}
-# SAMPLE_DURATION = 180
-
 local_data_store = {
-    0: [resolve_path("Data", "grave.wav")],
-    1: [resolve_path("Data", "normal.wav")],
-    2: [resolve_path("Data", "haute.wav")],
-    3: [resolve_path("Data", "amelie.wav")],
+    0: [resolve_path("Data", "aymeric.wav")],
+    1: [resolve_path("Data", "amelie.wav")],
 }
 local_classes_i2n = {
-    0: "aymeric grave",
-    1: "aymeric normal",
-    2: "aymeric haute",
-    3: "amelie",
+    0: "aymeric",
+    1: "amelie",
 }
 SAMPLE_DURATION = 40
-
-# local_data_store = {
-#     0: [resolve_path("Data", "alestorm.wav")],
-#     1: [resolve_path("Data", "amon_amarth.wav")],
-#     2: [resolve_path("Data", "nightwish.wav")],
-#     # 3: [resolve_path("Data", "normal.wav")],
-# }
-# local_classes_i2n = {
-#     0: "alestorm",
-#     1: "amon_amarth",
-#     2: "nightwish",
-#     # 3: "voix",
-# }
-# SAMPLE_DURATION = 180
 
 
 def give_many_fft(fs: int, time_data: np.ndarray, threshold: float = 0.01,
