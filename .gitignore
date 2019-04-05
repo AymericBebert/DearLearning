@@ -26,8 +26,10 @@ venv/
 ._*
 
 # Dataset
-Data/
 Cache/
+Data/*
+!Data/aymeric.wav
+!Data/amelie.wav
 
 # Local setup
 config/local.py
