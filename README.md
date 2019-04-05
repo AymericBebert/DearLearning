@@ -38,3 +38,7 @@ You can also run the realtime recognition with:
 ```sh
 ./src/realtime.py
 ```
+
+At the end of the project we aldo pushed the notebook with tests, MLP and CNN, named `Tests.ipynb`
+
+You can view its content easily with `Tests.html`, or open it in jupyter notebook.
