@@ -32,3 +32,9 @@ You should be able to run the code with:
 ```
 
 You may have to run `export PYTHONPATH=$(pwd)` beforehand for the imports to work.
+
+You can also run the realtime recognition with:
+
+```sh
+./src/realtime.py
+```
