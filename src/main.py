@@ -28,6 +28,8 @@ if __name__ == "__main__":
     dataset_path = resolve_path(config.DATASET_PATH)
     cache_path = resolve_path(config.CACHE_PATH)
 
+    os.makedirs(cache_path, exist_ok=True)
+
     # # FFT of some files
     # file_to_fft(os.path.join(dataset_path, "audio", "guitar_acoustic_030-076-127.wav"), plot=True)
     # file_to_fft(os.path.join(dataset_path, "audio", "guitar_acoustic_030-077-075.wav"), plot=True)
@@ -68,7 +70,6 @@ if __name__ == "__main__":
                                                        exclude_source=exclude_sources)
 
     # Make all the spectrograms. This can take some time. Put data into cache for faster reload
-    os.makedirs(cache_path, exist_ok=True)
     dataset_hash = hashlib.sha1(f"{dataset_path}-{exclude_families}-{exclude_sources}".encode('utf-8')).hexdigest()
     cache_file_path = os.path.join(cache_path, dataset_hash + ".pickle")
 
